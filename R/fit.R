@@ -2,7 +2,7 @@
 
 #' Fit copula based bivariate beta-binomial distribution to diagnostic data.
 #' @param cdtamodel An object of cdtamodel class from \link{cdtamodel}.
-#' @param data A data-frame with no missing values containg TP, TN, FP, FN, 'SID' and co-varaiables(if necessary).
+#' @param data A data-frame with no missing values containing TP, TN, FP, FN, 'SID' and co-variables(if necessary).
 #' @param SID A string indicating the name of the column with the study identifier.
 #' @param chains A positive numeric value specifying the number of chains, default is 3.
 #' @param iter A positive numeric value specifying the number of iterations per chain. The default is 6000.
@@ -14,6 +14,20 @@
 #' @return An object of cdtafit class.
 #'
 #' @examples
+#' data(telomerase)
+#' model1 <-  cdtamodel(copula = 'fgm')
+#'
+#' model2 <- cdtamodel(copula = 'fgm',
+#'                modelargs=list(param=2,
+#'                               prior.lse='normal',
+#'                               par.lse1=0,
+#'                               par.lse2=5,
+#'                               prior.lsp='normal',
+#'                               par.lsp1=0,
+#'                               par.lsp2=5))
+#'
+#' model3 <-  cdtamodel(copula = 'fgm',
+#'                modelargs = list(formula.se = StudyID ~ Test - 1))
 #' \dontrun{
 #' fit1 <- fit(model1,
 #'                 SID='ID',
@@ -34,6 +48,8 @@
 #'                 seed=3)
 #' }
 #'
+#'@references {Nyaga VN, Arbyn M, Aerts M (2017). CopulaDTA: An R Package for Copula-Based Beta-Binomial Models for Diagnostic Test Accuracy
+#'Studies in a Bayesian Framework. Journal of Statistical Software, 82(1), 1-27. doi:10.18637/jss.v082.c01}
 #'@references {Agresti A (2002). Categorical Data Analysis. John Wiley & Sons, Inc.}
 #'@references {Clayton DG (1978). A model for Association in Bivariate Life Tables and its Application in
 #'Epidemiological Studies of Familial Tendency in Chronic Disease Incidence. Biometrika,65(1), 141-151.}

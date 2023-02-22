@@ -5,16 +5,29 @@
 #' @param digits An optional positive value to control the number of digits to print when printing numeric values. The default is 3.
 #' @param ... other \link[rstan]{stan} options.
 #' @examples
+#' data(telomerase)
+#' model1 <-  cdtamodel(copula = 'fgm')
 #'
+#' model2 <- cdtamodel(copula = 'fgm',
+#'                modelargs=list(param=2,
+#'                               prior.lse='normal',
+#'                               par.lse1=0,
+#'                               par.lse2=5,
+#'                               prior.lsp='normal',
+#'                               par.lsp1=0,
+#'                               par.lsp2=5))
+#'
+#' model3 <-  cdtamodel(copula = 'fgm',
+#'                modelargs = list(formula.se = StudyID ~ Test - 1))
 #' \dontrun{
 #'
-#' fit1 <- fit(data=telomerase,
-#'              SID = "ID",
-#'              copula="fgm",
-#'              iter = 400,
-#'              warmup = 100,
-#'              seed=1,
-#'              cores=1)
+#' fit1 <- fit(model1,
+#'                 SID='ID',
+#'                 data=telomerase,
+#'                 iter=2000,
+#'                 warmup=1000,
+#'                 thin=1,
+#'                 seed=3)
 #'
 #' print(fit1)
 #'
@@ -30,6 +43,7 @@ print.cdtafit <- function(x, digits=3, ...){
    sm <- summary.cdtafit(x, ...)
 
    mu <- data.frame(sm$allsm$summary[grepl('MU', rownames(sm$allsm$summary)), c("mean", "2.5%", "50%", "97.5%", "n_eff", "Rhat")])
+   var <- data.frame(sm$allsm$summary[grepl('Var', rownames(sm$allsm$summary)), c("mean", "2.5%", "50%", "97.5%", "n_eff", "Rhat")])
 
     if (nrow(mu) > 2){
         ktau <- data.frame(sm$allsm$summary[grepl('ktau', rownames(sm$allsm$summary)), c("mean", "2.5%", "50%", "97.5%", "n_eff", "Rhat")])
@@ -55,19 +69,22 @@ print.cdtafit <- function(x, digits=3, ...){
     }
 #===================================    =======         ============================================#
     if (nrow(mu) > 2){
-        Summary <- rbind(mu, rr, ktau)
+        Summary <- rbind(mu, rr, ktau, var)
     } else {
-        Summary <- rbind(mu, ktau)
+        Summary <- rbind(mu, ktau, var)
         row.names(Summary)[3] <- "ktau[1]"
     }
 #========================== ============================= =========================================#
     if (nrow(mu) > 2){
         Summary$Parameter <- c(rep(c("Sensitivity", "Specificity"), each=nrow(mu)/2),
                                rep(c("Sensitivity", "Specificity"), each=nrow(rr)/2),
-                               rep("Correlation", each=nrow(ktau)))
+                               rep("Correlation", each=nrow(ktau)),
+                               rep(c("Var(Sens)", "Var(Spec)"), each=nrow(var)/2))
     } else {
 
-        Summary$Parameter <- c(rep(c("Sensitivity", "Specificity"), each=nrow(mu)/2), "Correlation")
+        Summary$Parameter <- c(rep(c("Sensitivity", "Specificity"), each=nrow(mu)/2),
+                               "Correlation",
+                               rep(c("Var(Sens)", "Var(Spec)"), each=nrow(var)/2))
     }
 
     names(Summary) <- c("Mean", "Lower", "Median", "Upper", "n_eff", "Rhat", "Parameter")

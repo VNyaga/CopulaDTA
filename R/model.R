@@ -1,14 +1,15 @@
 # 28 Jan 2016: Change Ns to N.
+# 22 Feb 2023: Update URL to mc-stan.org
 
 #' Specify the copula based bivariate beta-binomial distribution to fit to the diagnostic data.
 #'
-#' @param copula a description of the copula function used to model the correlation between sensitivity and specificty.
+#' @param copula a description of the copula function used to model the correlation between sensitivity and specificity.
 #' This is a string naming the copula function. The choices are "fgm", "frank", "gauss", "c90" and "c270".
 #' @param modelargs a (optional) list of control parameter for the prior distributions. The parameters in the list include:
 #' \itemize{
 #' \item{formula.se} {An  object of class "formula": A symbolic description of a linear model to be fitted to mean E(x) of sensitivity in the logit scale.
 #' the default (when no covariates are included) symbolic description is SID ~ 1 corresponds to the model formula E(x) = mu = exp(a)/(1 + exp(a)) where a is the intercept.
-#' When the covariates are categorical and the relative measures are needed it is important to remove the interecept from the model to obtain meaningful parameters. EG for
+#' When the covariates are categorical and the relative measures are needed it is important to remove the intercept from the model to obtain meaningful parameters. EG for
 #' a covariate 'Test' with two levels(A and B) and relative sensitivity of B versus A is needed, then the correct formula is SID ~ Test - 1 or SID ~ Test + 0. See \link[stats]{formula}.
 #' For further information on interpretation of parameters in logistic regression see Agresti A(2002) Chapter 5.}
 #' \item{formula.sp} {An object of class "formula": A symbolic description of a linear model to be fitted to specificity data.
@@ -24,7 +25,7 @@
 #' \deqn{beta = ((1 - phi)/phi)*(1 - mu)} where \deqn{mu = alpha/(alpha + beta); 0<=mu<=1,} and
 #' \deqn{phi = 1/( 1 + alpha + beta); 0<=phi<=1.}}
 #'\item{prior.lse}{A description of prior distribution of the marginal mean sensitivity in the logit scale. The default is "normal" distribution.
-#'For other distributions see stan documentation at \url{http://mc-stan.org/documentation/}.}
+#'For other distributions see stan documentation at \url{https://mc-stan.org/documentation/}.}
 #'\item{par.lse1}{A numeric value indicating the location of the prior distribution of the marginal mean sensitivity in the logit scale.
 #'The default is 0 which implying a distribution centered around 0.5 in the 0-1 scale.}
 #'\item{par.lse2}{A numeric value indicating the spread(standard deviation) pf the prior distribution of the marginal mean sensitivity in the logit scale
@@ -44,9 +45,9 @@
 #'@return An object of cdtamodel class.
 #'@examples
 #' data(telomerase)
-#' model1 =  cdtamodel(copula = 'fgm')
+#' model1 <-  cdtamodel(copula = 'fgm')
 #'
-#' model2 = cdtamodel(copula = 'fgm',
+#' model2 <- cdtamodel(copula = 'fgm',
 #'                modelargs=list(param=2,
 #'                               prior.lse='normal',
 #'                               par.lse1=0,
@@ -55,9 +56,10 @@
 #'                               par.lsp1=0,
 #'                               par.lsp2=5))
 #'
-#' model3 =  cdtamodel(copula = 'fgm',
+#' model3 <-  cdtamodel(copula = 'fgm',
 #'                modelargs = list(formula.se = StudyID ~ Test - 1))
-#'
+#'@references {Nyaga VN, Arbyn M, Aerts M (2017). CopulaDTA: An R Package for Copula-Based Beta-Binomial Models for Diagnostic Test Accuracy
+#'Studies in a Bayesian Framework. Journal of Statistical Software, 82(1), 1-27. doi:10.18637/jss.v082.c01}
 #'@references {Agresti A (2002). Categorical Data Analysis. John Wiley & Sons, Inc.}
 #'@references {Clayton DG (1978). A model for Association in Bivariate Life Tables and its Application in
 #'Epidemiological Studies of Familial Tendency in Chronic Disease Incidence. Biometrika,65(1), 141-151.}
@@ -246,6 +248,8 @@ transf_params.pt1 = "\n } \n transformed parameters{
 		vector<lower=0, upper=1>[N] muspi;
 		vector[Npse] MUse;
 		vector[Npsp] MUsp;
+		vector[Npse] Varse;
+		vector[Npsp] Varsp;
 		vector[Npse] RRse;
 		vector[Npsp] RRsp;
 		matrix<lower=0>[N,2] alpha;
@@ -271,7 +275,9 @@ phi.pt2 = "\n\t\tphisei = exp(xse*betaphise);
 		phispi = exp(xsp*betaphisp);
 		phi = append_col(phisei, phispi);
 		alpha = (mui).*phi;
-		beta = (1 - mui).*phi;\n"
+		beta = (1 - mui).*phi;
+		Varse = ((MUse).*(1 - MUse))./(1 + exp(betaphise));
+		Varsp = ((MUsp).*(1 - MUsp))./(1 + exp(betaphisp));\n"
 }else{
 
 phi.pt1 = "\n\t\tvector<lower=0, upper=1>[N] phisei; \n\t\tvector<lower=0, upper=1>[N] phispi; \n\t\tmatrix<lower=0, upper=1>[N,2] phi;\n"
@@ -279,7 +285,9 @@ phi.pt2 = "\n\t\tphisei = exp(xse*betaphise)./(1 + exp(xse*betaphise));
 		phispi = exp(xsp*betaphisp)./(1 + exp(xsp*betaphisp));
 		phi = append_col(phisei, phispi);
 		alpha = ((1 - phi)./(phi)).*(mui);
-		beta = ((1 - phi)./(phi)).*(1 - mui);\n"
+		beta = ((1 - phi)./(phi)).*(1 - mui);
+        Varse = ((MUse).*(1 - MUse)).*(exp(betaphise));
+		Varsp = ((MUsp).*(1 - MUsp)).*(exp(betaphisp));\n"
 }
 
 if (copula=="frank"){
@@ -332,7 +340,7 @@ if (copula=="frank"){
 }
 
 #======================================Priors ===========================================#
-pt2 = "\n}\n model{\n\t #priors \n"
+pt2 = "\n}\n model{\n\t //priors \n"
 
 priorse = paste('\t betamuse ~ ', modelargs$prior.lse,'(', modelargs$par.lse1, ', ', modelargs$par.lse2, ');\n', sep='')
 priorsp = paste('\t betamusp ~ ', modelargs$prior.lsp,'(', modelargs$par.lsp1, ', ', modelargs$par.lsp2, ');\n', sep='')

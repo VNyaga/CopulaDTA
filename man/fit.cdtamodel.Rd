@@ -4,13 +4,22 @@
 \alias{fit.cdtamodel}
 \title{Fit copula based bivariate beta-binomial distribution to diagnostic data.}
 \usage{
-fit.cdtamodel(cdtamodel, data, SID, cores = 3, chains = 3, iter = 6000,
-  warmup = 1000, thin = 10, ...)
+fit.cdtamodel(
+  cdtamodel,
+  data,
+  SID,
+  cores = 3,
+  chains = 3,
+  iter = 6000,
+  warmup = 1000,
+  thin = 10,
+  ...
+)
 }
 \arguments{
 \item{cdtamodel}{An object of cdtamodel class from \link{cdtamodel}.}
 
-\item{data}{A data-frame with no missing values containg TP, TN, FP, FN, 'SID' and co-varaiables(if necessary).}
+\item{data}{A data-frame with no missing values containing TP, TN, FP, FN, 'SID' and co-variables(if necessary).}
 
 \item{SID}{A string indicating the name of the column with the study identifier.}
 
@@ -34,6 +43,20 @@ An object of cdtafit class.
 Fit copula based bivariate beta-binomial distribution to diagnostic data.
 }
 \examples{
+data(telomerase)
+model1 <-  cdtamodel(copula = 'fgm')
+
+model2 <- cdtamodel(copula = 'fgm',
+               modelargs=list(param=2,
+                              prior.lse='normal',
+                              par.lse1=0,
+                              par.lse2=5,
+                              prior.lsp='normal',
+                              par.lsp1=0,
+                              par.lsp2=5))
+
+model3 <-  cdtamodel(copula = 'fgm',
+               modelargs = list(formula.se = StudyID ~ Test - 1))
 \dontrun{
 fit1 <- fit(model1,
                 SID='ID',
@@ -55,6 +78,9 @@ fit2 <- fit(model2,
 
 }
 \references{
+{Nyaga VN, Arbyn M, Aerts M (2017). CopulaDTA: An R Package for Copula-Based Beta-Binomial Models for Diagnostic Test Accuracy
+Studies in a Bayesian Framework. Journal of Statistical Software, 82(1), 1-27. doi:10.18637/jss.v082.c01}
+
 {Agresti A (2002). Categorical Data Analysis. John Wiley & Sons, Inc.}
 
 {Clayton DG (1978). A model for Association in Bivariate Life Tables and its Application in
